@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 
-import { getCategoriesFromApi } from '@/lib/cms';
+import {
+  getCategoriesFromApi,
+  getEthicsCategoriesFromApi,
+} from '@/lib/cms';
 import { getCacheTime, getConfig } from '@/lib/config';
 
 export const runtime = 'edge';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const sourcesParam = searchParams.get('sources') || 'mdzy,jisu';
+  const kind = searchParams.get('kind') || 'short-drama';
+  const defaultSources =
+    kind === 'ethics' ? 'mdzy,jisu,zuid,wujin,bfzy' : 'mdzy,jisu';
+  const sourcesParam = searchParams.get('sources') || defaultSources;
 
   const config = await getConfig();
   const sourceKeys = sourcesParam
@@ -24,8 +30,10 @@ export async function GET(request: Request) {
   }
 
   try {
+    const fetchCategories =
+      kind === 'ethics' ? getEthicsCategoriesFromApi : getCategoriesFromApi;
     const results = await Promise.all(
-      apiSites.map((site) => getCategoriesFromApi(site))
+      apiSites.map((site) => fetchCategories(site))
     );
     const categories = results.flat();
     const cacheTime = await getCacheTime();
