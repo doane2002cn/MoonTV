@@ -12,8 +12,12 @@ import {
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import { partitionSearchResults } from '@/lib/nsfw';
+import {
+  getNsfwEnabled,
+  subscribeNsfwChange,
+} from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
-import { yellowWords } from '@/lib/yellow';
 
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
@@ -30,6 +34,8 @@ function SearchPageClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [ethicsResults, setEthicsResults] = useState<SearchResult[]>([]);
+  const [nsfwEnabled, setNsfwEnabled] = useState(false);
 
   // 获取默认聚合设置：只读取用户本地设置，默认为 true
   const getDefaultAggregate = () => {
@@ -91,6 +97,11 @@ function SearchPageClient() {
       }
     });
   }, [searchResults]);
+
+  useEffect(() => {
+    setNsfwEnabled(getNsfwEnabled());
+    return subscribeNsfwChange(setNsfwEnabled);
+  }, []);
 
   useEffect(() => {
     // 无搜索参数时聚焦搜索框
@@ -166,18 +177,9 @@ function SearchPageClient() {
         `/api/search?q=${encodeURIComponent(query.trim())}`
       );
       const data = await response.json();
-      let results = data.results;
-      if (
-        typeof window !== 'undefined' &&
-        !(window as any).RUNTIME_CONFIG?.DISABLE_YELLOW_FILTER
-      ) {
-        results = results.filter((result: SearchResult) => {
-          const typeName = result.type_name || '';
-          return !yellowWords.some((word: string) => typeName.includes(word));
-        });
-      }
-      setSearchResults(
-        results.sort((a: SearchResult, b: SearchResult) => {
+      const results = data.results as SearchResult[];
+      const { safe, ethics } = partitionSearchResults(results);
+      const sortFn = (a: SearchResult, b: SearchResult) => {
           // 优先排序：标题与搜索词完全一致的排在前面
           const aExactMatch = a.title === query.trim();
           const bExactMatch = b.title === query.trim();
@@ -201,11 +203,13 @@ function SearchPageClient() {
               return parseInt(a.year) > parseInt(b.year) ? -1 : 1;
             }
           }
-        })
-      );
+        };
+      setSearchResults(safe.sort(sortFn));
+      setEthicsResults(ethics.sort(sortFn));
       setShowResults(true);
     } catch (error) {
       setSearchResults([]);
+      setEthicsResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -339,12 +343,41 @@ function SearchPageClient() {
                         />
                       </div>
                     ))}
-                {searchResults.length === 0 && (
+                {searchResults.length === 0 && (!nsfwEnabled || ethicsResults.length === 0) && (
                   <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
                     未找到相关结果
                   </div>
                 )}
               </div>
+
+              {nsfwEnabled && ethicsResults.length > 0 && (
+                <div className='mt-12'>
+                  <h3 className='text-lg font-bold text-amber-600 dark:text-amber-400 mb-6'>
+                    伦理片
+                  </h3>
+                  <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                    {ethicsResults.map((item) => (
+                      <div
+                        key={`ethics-${item.source}-${item.id}`}
+                        className='w-full'
+                      >
+                        <VideoCard
+                          id={item.id}
+                          title={item.title + ' ' + (item.type_name || '')}
+                          poster={item.poster}
+                          episodes={item.episodes.length}
+                          source={item.source}
+                          source_name={item.source_name}
+                          douban_id={item.douban_id?.toString()}
+                          year={item.year}
+                          from='search'
+                          type={item.episodes.length > 1 ? 'tv' : 'movie'}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           ) : searchHistory.length > 0 ? (
             // 搜索历史
