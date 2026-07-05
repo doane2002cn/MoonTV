@@ -90,7 +90,9 @@
     {
       "name": "短剧",
       "type": "tv",
-      "query": "短剧"
+      "query": "短剧",
+      "mode": "cms",
+      "sources": ["mdzy", "jisu"]
     }
   ]
 }
