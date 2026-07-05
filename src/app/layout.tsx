@@ -69,6 +69,7 @@ export default async function RootLayout({
       sources: category.sources,
     })) || [];
   let shortDramaSources = 'mdzy,jisu';
+  let ethicsSources = 'mdzy,jisu,zuid,wujin,bfzy';
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'upstash'
@@ -105,6 +106,7 @@ export default async function RootLayout({
     DISABLE_YELLOW_FILTER: disableYellowFilter,
     CUSTOM_CATEGORIES: customCategories,
     SHORT_DRAMA_SOURCES: shortDramaSources,
+    ETHICS_SOURCES: ethicsSources,
   };
 
   return (
