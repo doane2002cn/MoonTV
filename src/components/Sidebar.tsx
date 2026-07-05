@@ -145,14 +145,14 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
   useEffect(() => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setMenuItems((prevItems) => [
-        ...prevItems,
-        {
+      const customItems = runtimeConfig.CUSTOM_CATEGORIES.map(
+        (cat: { name?: string; query: string }) => ({
           icon: Star,
-          label: '自定义',
+          label: cat.name || cat.query,
           href: '/douban?type=custom',
-        },
-      ]);
+        })
+      );
+      setMenuItems((prevItems) => [...prevItems, ...customItems]);
     }
   }, []);
 
