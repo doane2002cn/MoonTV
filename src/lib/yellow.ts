@@ -1,22 +1,2 @@
-export const yellowWords = [
-  '伦理片',
-  '福利',
-  '里番动漫',
-  '门事件',
-  '萝莉少女',
-  '制服诱惑',
-  '国产传媒',
-  'cosplay',
-  '黑丝诱惑',
-  '无码',
-  '日本无码',
-  '有码',
-  '日本有码',
-  'SWAG',
-  '网红主播',
-  '色情片',
-  '同性片',
-  '福利视频',
-  '福利片',
-  '写真热舞',
-];
+/** @deprecated 请使用 nsfw.ts，保留此文件仅为兼容旧引用 */
+export { NSFW_CATEGORY_KEYWORDS as yellowWords, isNsfwCategory } from './nsfw';
