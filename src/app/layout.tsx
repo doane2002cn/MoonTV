@@ -57,7 +57,17 @@ export default async function RootLayout({
       name: 'name' in category ? category.name : '',
       type: category.type,
       query: category.query,
-    })) || ([] as Array<{ name: string; type: 'movie' | 'tv'; query: string }>);
+      mode: category.mode,
+      sources: category.sources,
+    })) ||
+    ([] as Array<{
+      name: string;
+      type: 'movie' | 'tv';
+      query: string;
+      mode?: string;
+      sources?: string[];
+    }>);
+  let shortDramaSources = 'mdzy,jisu';
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'upstash'
@@ -75,7 +85,14 @@ export default async function RootLayout({
       name: category.name || '',
       type: category.type,
       query: category.query,
+      mode: category.mode,
+      sources: category.sources,
     }));
+  }
+
+  const cmsCategory = customCategories.find((c) => c.mode === 'cms');
+  if (cmsCategory?.sources?.length) {
+    shortDramaSources = cmsCategory.sources.join(',');
   }
 
   // 将运行时配置注入到全局 window 对象，供客户端在运行时读取
@@ -86,6 +103,7 @@ export default async function RootLayout({
     DOUBAN_PROXY: doubanProxy,
     DISABLE_YELLOW_FILTER: disableYellowFilter,
     CUSTOM_CATEGORIES: customCategories,
+    SHORT_DRAMA_SOURCES: shortDramaSources,
   };
 
   return (
