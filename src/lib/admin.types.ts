@@ -28,6 +28,8 @@ export interface AdminConfig {
     name?: string;
     type: 'movie' | 'tv';
     query: string;
+    mode?: 'douban' | 'search' | 'cms';
+    sources?: string[];
     from: 'config' | 'custom';
     disabled?: boolean;
   }[];
