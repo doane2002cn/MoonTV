@@ -146,10 +146,19 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       const customItems = runtimeConfig.CUSTOM_CATEGORIES.map(
-        (cat: { name?: string; query: string }) => ({
+        (cat: {
+          name?: string;
+          query: string;
+          mode?: string;
+        }) => ({
           icon: Star,
           label: cat.name || cat.query,
-          href: '/douban?type=custom',
+          href:
+            cat.mode === 'cms'
+              ? '/short-drama'
+              : cat.mode === 'search'
+                ? `/search?q=${encodeURIComponent(cat.query)}`
+                : '/douban?type=custom',
         })
       );
       setMenuItems((prevItems) => [...prevItems, ...customItems]);
@@ -248,7 +257,11 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                   const isActive =
                     decodedActive === decodedItemHref ||
                     (decodedActive.startsWith('/douban') &&
-                      decodedActive.includes(`type=${typeMatch}`));
+                      decodedActive.includes(`type=${typeMatch}`)) ||
+                    (decodedItemHref.startsWith('/short-drama') &&
+                      decodedActive.startsWith('/short-drama')) ||
+                    (decodedItemHref.startsWith('/search') &&
+                      decodedActive.startsWith('/search'));
                   const Icon = item.icon;
                   return (
                     <Link
