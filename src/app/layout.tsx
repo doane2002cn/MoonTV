@@ -15,6 +15,14 @@ import { ThemeProvider } from '../components/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
+type RuntimeCustomCategory = {
+  name: string;
+  type: 'movie' | 'tv';
+  query: string;
+  mode?: string;
+  sources?: string[];
+};
+
 // 动态生成 metadata，支持配置更新后的标题变化
 export async function generateMetadata(): Promise<Metadata> {
   let siteName = process.env.SITE_NAME || 'MoonTV';
@@ -52,21 +60,14 @@ export default async function RootLayout({
   let doubanProxy = process.env.NEXT_PUBLIC_DOUBAN_PROXY || '';
   let disableYellowFilter =
     process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true';
-  let customCategories =
+  let customCategories: RuntimeCustomCategory[] =
     (RuntimeConfig as any).custom_category?.map((category: any) => ({
       name: 'name' in category ? category.name : '',
       type: category.type,
       query: category.query,
       mode: category.mode,
       sources: category.sources,
-    })) ||
-    ([] as Array<{
-      name: string;
-      type: 'movie' | 'tv';
-      query: string;
-      mode?: string;
-      sources?: string[];
-    }>);
+    })) || [];
   let shortDramaSources = 'mdzy,jisu';
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
