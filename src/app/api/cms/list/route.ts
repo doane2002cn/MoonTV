@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 
 import { getVideosByCategory } from '@/lib/cms';
 import { getCacheTime, getConfig } from '@/lib/config';
-import { yellowWords } from '@/lib/yellow';
 
 export const runtime = 'edge';
 
@@ -37,13 +36,6 @@ export async function GET(request: Request) {
       parseInt(typeId, 10),
       page
     );
-
-    if (!config.SiteConfig.DisableYellowFilter) {
-      result.list = result.list.filter((item) => {
-        const typeName = item.type_name || '';
-        return !yellowWords.some((word: string) => typeName.includes(word));
-      });
-    }
 
     const cacheTime = await getCacheTime();
 
