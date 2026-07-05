@@ -1,4 +1,5 @@
 import { API_CONFIG, ApiSite } from '@/lib/config';
+import { isNsfwCategory } from '@/lib/nsfw';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
 
@@ -69,8 +70,15 @@ function mapApiItem(item: CmsApiItem, apiSite: ApiSite): SearchResult {
   };
 }
 
-export async function getCategoriesFromApi(
+export async function getEthicsCategoriesFromApi(
   apiSite: ApiSite
+): Promise<CmsCategory[]> {
+  return getCategoriesFromApiByFilter(apiSite, isNsfwCategory);
+}
+
+async function getCategoriesFromApiByFilter(
+  apiSite: ApiSite,
+  filter: (typeName: string) => boolean
 ): Promise<CmsCategory[]> {
   try {
     const controller = new AbortController();
@@ -95,7 +103,7 @@ export async function getCategoriesFromApi(
 
     return classes
       .filter((c: { type_name?: string }) =>
-        isShortDramaCategory(c.type_name || '')
+        filter(c.type_name || '')
       )
       .map(
         (c: {
@@ -113,6 +121,12 @@ export async function getCategoriesFromApi(
   } catch {
     return [];
   }
+}
+
+export async function getCategoriesFromApi(
+  apiSite: ApiSite
+): Promise<CmsCategory[]> {
+  return getCategoriesFromApiByFilter(apiSite, isShortDramaCategory);
 }
 
 export async function getVideosByCategory(
