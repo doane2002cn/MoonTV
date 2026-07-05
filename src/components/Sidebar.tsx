@@ -2,7 +2,16 @@
 
 'use client';
 
-import { Clover, Film, Home, Menu, Search, Star, Tv } from 'lucide-react';
+import {
+  Clover,
+  Film,
+  Home,
+  Menu,
+  Search,
+  ShieldAlert,
+  Star,
+  Tv,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -140,6 +149,11 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
       label: '综艺',
       href: '/douban?type=show',
     },
+    {
+      icon: ShieldAlert,
+      label: '伦理片',
+      href: '/ethics',
+    },
   ]);
 
   useEffect(() => {
@@ -261,7 +275,9 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                     (decodedItemHref.startsWith('/short-drama') &&
                       decodedActive.startsWith('/short-drama')) ||
                     (decodedItemHref.startsWith('/search') &&
-                      decodedActive.startsWith('/search'));
+                      decodedActive.startsWith('/search')) ||
+                    (decodedItemHref.startsWith('/ethics') &&
+                      decodedActive.startsWith('/ethics'));
                   const Icon = item.icon;
                   return (
                     <Link
