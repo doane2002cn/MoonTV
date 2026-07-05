@@ -21,6 +21,8 @@ interface ConfigFileStruct {
     name?: string;
     type: 'movie' | 'tv';
     query: string;
+    mode?: 'douban' | 'search' | 'cms';
+    sources?: string[];
   }[];
 }
 
@@ -136,6 +138,8 @@ async function initConfig() {
             name: category.name,
             type: category.type,
             query: category.query,
+            mode: category.mode,
+            sources: category.sources,
             from: 'config',
             disabled: false,
           });
@@ -220,6 +224,8 @@ async function initConfig() {
             name: category.name,
             type: category.type,
             query: category.query,
+            mode: category.mode,
+            sources: category.sources,
             from: 'config',
             disabled: false,
           })),
@@ -269,6 +275,8 @@ async function initConfig() {
           name: category.name,
           type: category.type,
           query: category.query,
+          mode: category.mode,
+          sources: category.sources,
           from: 'config',
           disabled: false,
         })) || [],
@@ -353,6 +361,8 @@ export async function getConfig(): Promise<AdminConfig> {
       name: category.name,
       type: category.type,
       query: category.query,
+      mode: category.mode,
+      sources: category.sources,
       from: 'config',
       disabled: false,
     }));
@@ -459,6 +469,8 @@ export async function resetConfig() {
             name: category.name,
             type: category.type,
             query: category.query,
+            mode: category.mode,
+            sources: category.sources,
             from: 'config',
             disabled: false,
           })) || []
