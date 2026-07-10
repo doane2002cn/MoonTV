@@ -20,6 +20,26 @@ export function setNsfwEnabled(enabled: boolean): void {
   );
 }
 
+export async function verifyAndEnableNsfw(
+  password: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/nsfw/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: data.error || '密码错误' };
+    }
+    setNsfwEnabled(true);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: '网络错误，请稍后重试' };
+  }
+}
+
 export function subscribeNsfwChange(
   handler: (enabled: boolean) => void
 ): () => void {
