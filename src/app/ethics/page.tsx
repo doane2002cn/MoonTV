@@ -8,8 +8,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { CmsCategory } from '@/lib/cms';
 import {
   getNsfwEnabled,
-  setNsfwEnabled,
   subscribeNsfwChange,
+  verifyAndEnableNsfw,
 } from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
 
@@ -23,6 +23,9 @@ function EthicsPageClient() {
   const searchParams = useSearchParams();
 
   const [nsfwEnabled, setNsfwEnabledState] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [videos, setVideos] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,17 +197,55 @@ function EthicsPageClient() {
             </h1>
             <p className='text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed'>
               为保护浏览安全，伦理片 / 里番 / 福利 / 写真热舞 / 擦边短剧 /
-              港台三级等内容默认不可见。请在设置中开启 NSFW 开关后查看。
+              港台三级等内容默认不可见。请输入密码开启 NSFW 后查看。
             </p>
+            <input
+              type='password'
+              className='w-full mb-2 px-3 py-2.5 border border-amber-300 dark:border-amber-700 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500'
+              placeholder='输入密码'
+              value={unlockPassword}
+              onChange={(e) => {
+                setUnlockPassword(e.target.value);
+                setUnlockError('');
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && unlockPassword) {
+                  setUnlocking(true);
+                  const result = await verifyAndEnableNsfw(unlockPassword);
+                  setUnlocking(false);
+                  if (!result.ok) setUnlockError(result.error || '密码错误');
+                  else setUnlockPassword('');
+                }
+              }}
+              disabled={unlocking}
+            />
+            {unlockError && (
+              <p className='text-xs text-red-500 mb-2'>{unlockError}</p>
+            )}
             <button
-              onClick={() => setNsfwEnabled(true)}
-              className='w-full mb-3 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors'
+              onClick={async () => {
+                if (!unlockPassword) {
+                  setUnlockError('请输入密码');
+                  return;
+                }
+                setUnlocking(true);
+                setUnlockError('');
+                const result = await verifyAndEnableNsfw(unlockPassword);
+                setUnlocking(false);
+                if (!result.ok) {
+                  setUnlockError(result.error || '密码错误');
+                  return;
+                }
+                setUnlockPassword('');
+              }}
+              disabled={unlocking}
+              className='w-full mb-3 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors'
             >
-              开启 NSFW 并进入
+              {unlocking ? '验证中...' : '验证密码并开启'}
             </button>
             <p className='text-xs text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1'>
               <Settings className='w-3.5 h-3.5' />
-              也可在用户菜单 → 设置 中切换
+              也可在用户菜单 → 设置 中开启
             </p>
           </div>
         </div>
