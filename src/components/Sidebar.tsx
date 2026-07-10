@@ -23,6 +23,8 @@ import {
   useState,
 } from 'react';
 
+import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
+
 import { useSite } from './SiteProvider';
 
 interface SidebarContextType {
@@ -133,38 +135,25 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     isCollapsed,
   };
 
-  const [menuItems, setMenuItems] = useState([
-    {
-      icon: Film,
-      label: '电影',
-      href: '/douban?type=movie',
-    },
-    {
-      icon: Tv,
-      label: '剧集',
-      href: '/douban?type=tv',
-    },
-    {
-      icon: Clover,
-      label: '综艺',
-      href: '/douban?type=show',
-    },
-    {
-      icon: ShieldAlert,
-      label: '伦理片',
-      href: '/ethics',
-    },
-  ]);
+  const buildMenuItems = useCallback(() => {
+    const baseItems = [
+      { icon: Film, label: '电影', href: '/douban?type=movie' },
+      { icon: Tv, label: '剧集', href: '/douban?type=tv' },
+      { icon: Clover, label: '综艺', href: '/douban?type=show' },
+    ];
 
-  useEffect(() => {
+    if (getNsfwEnabled()) {
+      baseItems.push({
+        icon: ShieldAlert,
+        label: '伦理片',
+        href: '/ethics',
+      });
+    }
+
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       const customItems = runtimeConfig.CUSTOM_CATEGORIES.map(
-        (cat: {
-          name?: string;
-          query: string;
-          mode?: string;
-        }) => ({
+        (cat: { name?: string; query: string; mode?: string }) => ({
           icon: Star,
           label: cat.name || cat.query,
           href:
@@ -175,9 +164,19 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                 : '/douban?type=custom',
         })
       );
-      setMenuItems((prevItems) => [...prevItems, ...customItems]);
+      return [...baseItems, ...customItems];
     }
+
+    return baseItems;
   }, []);
+
+  const [menuItems, setMenuItems] = useState(buildMenuItems);
+
+  useEffect(() => {
+    const refresh = () => setMenuItems(buildMenuItems());
+    refresh();
+    return subscribeNsfwChange(refresh);
+  }, [buildMenuItems]);
 
   return (
     <SidebarContext.Provider value={contextValue}>
