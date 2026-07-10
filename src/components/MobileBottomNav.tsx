@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
 
 interface MobileBottomNavProps {
   /**
@@ -28,40 +30,27 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
   const currentActive = activePath ?? pathname;
 
-  const [navItems, setNavItems] = useState([
-    { icon: Home, label: '首页', href: '/' },
-    { icon: Search, label: '搜索', href: '/search' },
-    {
-      icon: Film,
-      label: '电影',
-      href: '/douban?type=movie',
-    },
-    {
-      icon: Tv,
-      label: '剧集',
-      href: '/douban?type=tv',
-    },
-    {
-      icon: Clover,
-      label: '综艺',
-      href: '/douban?type=show',
-    },
-    {
-      icon: ShieldAlert,
-      label: '伦理片',
-      href: '/ethics',
-    },
-  ]);
+  const buildNavItems = useCallback(() => {
+    const baseItems = [
+      { icon: Home, label: '首页', href: '/' },
+      { icon: Search, label: '搜索', href: '/search' },
+      { icon: Film, label: '电影', href: '/douban?type=movie' },
+      { icon: Tv, label: '剧集', href: '/douban?type=tv' },
+      { icon: Clover, label: '综艺', href: '/douban?type=show' },
+    ];
 
-  useEffect(() => {
+    if (getNsfwEnabled()) {
+      baseItems.push({
+        icon: ShieldAlert,
+        label: '伦理片',
+        href: '/ethics',
+      });
+    }
+
     const runtimeConfig = (window as any).RUNTIME_CONFIG;
     if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
       const customItems = runtimeConfig.CUSTOM_CATEGORIES.map(
-        (cat: {
-          name?: string;
-          query: string;
-          mode?: string;
-        }) => ({
+        (cat: { name?: string; query: string; mode?: string }) => ({
           icon: Star,
           label: cat.name || cat.query,
           href:
@@ -72,9 +61,19 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
                 : '/douban?type=custom',
         })
       );
-      setNavItems((prevItems) => [...prevItems, ...customItems]);
+      return [...baseItems, ...customItems];
     }
+
+    return baseItems;
   }, []);
+
+  const [navItems, setNavItems] = useState(buildNavItems);
+
+  useEffect(() => {
+    const refresh = () => setNavItems(buildNavItems());
+    refresh();
+    return subscribeNsfwChange(refresh);
+  }, [buildNavItems]);
 
   const isActive = (href: string) => {
     const typeMatch = href.match(/type=([^&]+)/)?.[1];
