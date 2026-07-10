@@ -13,10 +13,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { partitionSearchResults } from '@/lib/nsfw';
-import {
-  getNsfwEnabled,
-  subscribeNsfwChange,
-} from '@/lib/nsfw.client';
+import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
 
 import PageLayout from '@/components/PageLayout';
