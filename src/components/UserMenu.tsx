@@ -8,10 +8,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-import {
-  getNsfwEnabled,
-  setNsfwEnabled,
-} from '@/lib/nsfw.client';
+import { getNsfwEnabled, setNsfwEnabled } from '@/lib/nsfw.client';
 import { checkForUpdates, CURRENT_VERSION, UpdateStatus } from '@/lib/version';
 
 interface AuthInfo {
