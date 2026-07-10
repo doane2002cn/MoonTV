@@ -69,7 +69,7 @@ export default async function RootLayout({
       sources: category.sources,
     })) || [];
   let shortDramaSources = 'mdzy,jisu';
-  let ethicsSources = 'mdzy,jisu,zuid,wujin,bfzy';
+  const ethicsSources = 'mdzy,jisu,zuid,wujin,bfzy';
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'upstash'
