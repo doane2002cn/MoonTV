@@ -8,7 +8,11 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-import { getNsfwEnabled, setNsfwEnabled } from '@/lib/nsfw.client';
+import {
+  getNsfwEnabled,
+  setNsfwEnabled,
+  verifyAndEnableNsfw,
+} from '@/lib/nsfw.client';
 import { checkForUpdates, CURRENT_VERSION, UpdateStatus } from '@/lib/version';
 
 interface AuthInfo {
@@ -33,6 +37,9 @@ export const UserMenu: React.FC = () => {
   const [enableImageProxy, setEnableImageProxy] = useState(false);
   const [enableDoubanProxy, setEnableDoubanProxy] = useState(false);
   const [enableNsfw, setEnableNsfw] = useState(false);
+  const [nsfwPassword, setNsfwPassword] = useState('');
+  const [nsfwPasswordError, setNsfwPasswordError] = useState('');
+  const [nsfwVerifying, setNsfwVerifying] = useState(false);
 
   // 修改密码相关状态
   const [newPassword, setNewPassword] = useState('');
@@ -264,9 +271,28 @@ export const UserMenu: React.FC = () => {
     }
   };
 
-  const handleNsfwToggle = (value: boolean) => {
-    setEnableNsfw(value);
-    setNsfwEnabled(value);
+  const handleNsfwDisable = () => {
+    setEnableNsfw(false);
+    setNsfwEnabled(false);
+    setNsfwPassword('');
+    setNsfwPasswordError('');
+  };
+
+  const handleNsfwEnable = async () => {
+    if (!nsfwPassword) {
+      setNsfwPasswordError('请输入密码');
+      return;
+    }
+    setNsfwVerifying(true);
+    setNsfwPasswordError('');
+    const result = await verifyAndEnableNsfw(nsfwPassword);
+    setNsfwVerifying(false);
+    if (!result.ok) {
+      setNsfwPasswordError(result.error || '密码错误');
+      return;
+    }
+    setEnableNsfw(true);
+    setNsfwPassword('');
   };
 
   const handleResetSettings = () => {
@@ -282,6 +308,8 @@ export const UserMenu: React.FC = () => {
     setImageProxyUrl(defaultImageProxy);
     setEnableNsfw(false);
     setNsfwEnabled(false);
+    setNsfwPassword('');
+    setNsfwPasswordError('');
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
@@ -501,27 +529,59 @@ export const UserMenu: React.FC = () => {
           </div>
 
           {/* NSFW 内容开关 */}
-          <div className='flex items-center justify-between'>
-            <div>
-              <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                显示 NSFW 内容
-              </h4>
-              <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                开启后可浏览伦理片分类及搜索中的成人向内容
-              </p>
-            </div>
-            <label className='flex items-center cursor-pointer'>
-              <div className='relative'>
-                <input
-                  type='checkbox'
-                  className='sr-only peer'
-                  checked={enableNsfw}
-                  onChange={(e) => handleNsfwToggle(e.target.checked)}
-                />
-                <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-amber-500 transition-colors dark:bg-gray-600'></div>
-                <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  显示 NSFW 内容
+                </h4>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                  需输入密码验证后，才显示伦理片菜单及内容
+                </p>
               </div>
-            </label>
+              {enableNsfw && (
+                <label className='flex items-center cursor-pointer'>
+                  <div className='relative'>
+                    <input
+                      type='checkbox'
+                      className='sr-only peer'
+                      checked
+                      onChange={() => handleNsfwDisable()}
+                    />
+                    <div className='w-11 h-6 bg-amber-500 rounded-full transition-colors dark:bg-amber-600'></div>
+                    <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform translate-x-5'></div>
+                  </div>
+                </label>
+              )}
+            </div>
+            {!enableNsfw && (
+              <div className='space-y-2'>
+                <input
+                  type='password'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  placeholder='输入密码以开启 NSFW'
+                  value={nsfwPassword}
+                  onChange={(e) => {
+                    setNsfwPassword(e.target.value);
+                    setNsfwPasswordError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleNsfwEnable();
+                  }}
+                  disabled={nsfwVerifying}
+                />
+                {nsfwPasswordError && (
+                  <p className='text-xs text-red-500'>{nsfwPasswordError}</p>
+                )}
+                <button
+                  onClick={handleNsfwEnable}
+                  disabled={nsfwVerifying}
+                  className='w-full px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-md text-sm font-medium transition-colors'
+                >
+                  {nsfwVerifying ? '验证中...' : '确认开启'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 分割线 */}
