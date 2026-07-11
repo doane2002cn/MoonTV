@@ -24,6 +24,11 @@ interface ConfigFileStruct {
     mode?: 'douban' | 'search' | 'cms';
     sources?: string[];
   }[];
+  ethics_config?: {
+    sources?: string[];
+    categories?: string[];
+    allow_all?: boolean;
+  };
 }
 
 export const API_CONFIG = {
