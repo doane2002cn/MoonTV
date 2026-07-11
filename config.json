@@ -94,5 +94,10 @@
       "mode": "cms",
       "sources": ["mdzy", "jisu"]
     }
-  ]
+  ],
+  "ethics_config": {
+    "sources": ["zuid", "wujin"],
+    "categories": ["擦边短剧"],
+    "allow_all": false
+  }
 }
