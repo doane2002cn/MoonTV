@@ -16,7 +16,7 @@ import { SearchResult } from '@/lib/types';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
-const DEFAULT_SOURCES = 'mdzy,jisu,zuid,wujin,bfzy';
+const DEFAULT_SOURCES = 'zuid,wujin';
 
 function EthicsPageClient() {
   const router = useRouter();
