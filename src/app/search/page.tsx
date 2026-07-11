@@ -12,6 +12,10 @@ import {
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import {
+  createEthicsCategoryMatcher,
+  normalizeEthicsConfig,
+} from '@/lib/ethics.config';
 import { partitionSearchResults } from '@/lib/nsfw';
 import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
@@ -175,7 +179,13 @@ function SearchPageClient() {
       );
       const data = await response.json();
       const results = data.results as SearchResult[];
-      const { safe, ethics } = partitionSearchResults(results);
+      const ethicsConfig = normalizeEthicsConfig(
+        (window as any).RUNTIME_CONFIG?.ETHICS_CONFIG
+      );
+      const { safe, ethics } = partitionSearchResults(
+        results,
+        createEthicsCategoryMatcher(ethicsConfig)
+      );
       const sortFn = (a: SearchResult, b: SearchResult) => {
           // 优先排序：标题与搜索词完全一致的排在前面
           const aExactMatch = a.title === query.trim();
