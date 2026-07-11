@@ -7,6 +7,10 @@ import './globals.css';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
 import { getConfig } from '@/lib/config';
+import {
+  DEFAULT_ETHICS_CONFIG,
+  normalizeEthicsConfig,
+} from '@/lib/ethics.config';
 import RuntimeConfig from '@/lib/runtime';
 
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
@@ -69,7 +73,10 @@ export default async function RootLayout({
       sources: category.sources,
     })) || [];
   let shortDramaSources = 'mdzy,jisu';
-  const ethicsSources = 'mdzy,jisu,zuid,wujin,bfzy';
+  let ethicsConfig = normalizeEthicsConfig(
+    (RuntimeConfig as { ethics_config?: typeof DEFAULT_ETHICS_CONFIG })
+      .ethics_config
+  );
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'upstash'
@@ -106,7 +113,8 @@ export default async function RootLayout({
     DISABLE_YELLOW_FILTER: disableYellowFilter,
     CUSTOM_CATEGORIES: customCategories,
     SHORT_DRAMA_SOURCES: shortDramaSources,
-    ETHICS_SOURCES: ethicsSources,
+    ETHICS_SOURCES: ethicsConfig.sources.join(','),
+    ETHICS_CONFIG: ethicsConfig,
   };
 
   return (
