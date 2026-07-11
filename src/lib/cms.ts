@@ -1,5 +1,9 @@
 import { API_CONFIG, ApiSite } from '@/lib/config';
-import { isNsfwCategory } from '@/lib/nsfw';
+import {
+  createEthicsCategoryMatcher,
+  EthicsConfig,
+  normalizeEthicsConfig,
+} from '@/lib/ethics.config';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
 
@@ -71,9 +75,13 @@ function mapApiItem(item: CmsApiItem, apiSite: ApiSite): SearchResult {
 }
 
 export async function getEthicsCategoriesFromApi(
-  apiSite: ApiSite
+  apiSite: ApiSite,
+  ethicsConfig?: Partial<EthicsConfig>
 ): Promise<CmsCategory[]> {
-  return getCategoriesFromApiByFilter(apiSite, isNsfwCategory);
+  const matcher = createEthicsCategoryMatcher(
+    normalizeEthicsConfig(ethicsConfig)
+  );
+  return getCategoriesFromApiByFilter(apiSite, matcher);
 }
 
 async function getCategoriesFromApiByFilter(
