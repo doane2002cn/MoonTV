@@ -5,14 +5,29 @@ import {
   getEthicsCategoriesFromApi,
 } from '@/lib/cms';
 import { getCacheTime, getConfig } from '@/lib/config';
+import {
+  getEthicsSourcesString,
+  normalizeEthicsConfig,
+} from '@/lib/ethics.config';
+import runtimeConfig from '@/lib/runtime';
 
 export const runtime = 'edge';
+
+function getFileEthicsConfig() {
+  return normalizeEthicsConfig(
+    (runtimeConfig as { ethics_config?: Parameters<typeof normalizeEthicsConfig>[0] })
+      .ethics_config
+  );
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const kind = searchParams.get('kind') || 'short-drama';
+  const ethicsConfig = getFileEthicsConfig();
   const defaultSources =
-    kind === 'ethics' ? 'mdzy,jisu,zuid,wujin,bfzy' : 'mdzy,jisu';
+    kind === 'ethics'
+      ? getEthicsSourcesString(ethicsConfig)
+      : 'mdzy,jisu';
   const sourcesParam = searchParams.get('sources') || defaultSources;
 
   const config = await getConfig();
@@ -30,10 +45,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    const fetchCategories =
-      kind === 'ethics' ? getEthicsCategoriesFromApi : getCategoriesFromApi;
     const results = await Promise.all(
-      apiSites.map((site) => fetchCategories(site))
+      apiSites.map((site) =>
+        kind === 'ethics'
+          ? getEthicsCategoriesFromApi(site, ethicsConfig)
+          : getCategoriesFromApi(site)
+      )
     );
     const categories = results.flat();
     const cacheTime = await getCacheTime();
