@@ -62,17 +62,25 @@ export function isNsfwItem(item: Pick<SearchResult, 'type_name'>): boolean {
   return isNsfwCategory(item.type_name || '');
 }
 
-export function partitionSearchResults(results: SearchResult[]): {
+export function partitionSearchResults(
+  results: SearchResult[],
+  matchEthicsCategory?: (typeName: string) => boolean
+): {
   safe: SearchResult[];
   ethics: SearchResult[];
 } {
   const safe: SearchResult[] = [];
   const ethics: SearchResult[] = [];
+  const ethicsMatcher = matchEthicsCategory || isNsfwCategory;
+
   results.forEach((item) => {
-    if (isNsfwItem(item)) {
-      ethics.push(item);
-    } else {
+    const typeName = item.type_name || '';
+    if (!isNsfwCategory(typeName)) {
       safe.push(item);
+      return;
+    }
+    if (ethicsMatcher(typeName)) {
+      ethics.push(item);
     }
   });
   return { safe, ethics };
