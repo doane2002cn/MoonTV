@@ -73,7 +73,7 @@ export default async function RootLayout({
       sources: category.sources,
     })) || [];
   let shortDramaSources = 'mdzy,jisu';
-  let ethicsConfig = normalizeEthicsConfig(
+  const ethicsConfig = normalizeEthicsConfig(
     (RuntimeConfig as { ethics_config?: typeof DEFAULT_ETHICS_CONFIG })
       .ethics_config
   );

@@ -12,10 +12,7 @@ import {
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import {
-  createEthicsCategoryMatcher,
-  normalizeEthicsConfig,
-} from '@/lib/ethics.config';
+import { createEthicsCategoryMatcher, normalizeEthicsConfig } from '@/lib/ethics.config';
 import { partitionSearchResults } from '@/lib/nsfw';
 import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
