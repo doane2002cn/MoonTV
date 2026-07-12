@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import {
-  getCategoriesFromApi,
-  getEthicsCategoriesFromApi,
-} from '@/lib/cms';
+import { getCategoriesFromApi, getEthicsCategoriesFromApi } from '@/lib/cms';
 import { getCacheTime, getConfig } from '@/lib/config';
 import {
   getEthicsSourcesString,
@@ -15,8 +12,11 @@ export const runtime = 'edge';
 
 function getFileEthicsConfig() {
   return normalizeEthicsConfig(
-    (runtimeConfig as { ethics_config?: Parameters<typeof normalizeEthicsConfig>[0] })
-      .ethics_config
+    (
+      runtimeConfig as unknown as {
+        ethics_config?: Parameters<typeof normalizeEthicsConfig>[0];
+      }
+    ).ethics_config
   );
 }
 
@@ -25,9 +25,7 @@ export async function GET(request: Request) {
   const kind = searchParams.get('kind') || 'short-drama';
   const ethicsConfig = getFileEthicsConfig();
   const defaultSources =
-    kind === 'ethics'
-      ? getEthicsSourcesString(ethicsConfig)
-      : 'mdzy,jisu';
+    kind === 'ethics' ? getEthicsSourcesString(ethicsConfig) : 'mdzy,jisu';
   const sourcesParam = searchParams.get('sources') || defaultSources;
 
   const config = await getConfig();

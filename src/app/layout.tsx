@@ -74,8 +74,11 @@ export default async function RootLayout({
     })) || [];
   let shortDramaSources = 'mdzy,jisu';
   const ethicsConfig = normalizeEthicsConfig(
-    (RuntimeConfig as { ethics_config?: typeof DEFAULT_ETHICS_CONFIG })
-      .ethics_config
+    (
+      RuntimeConfig as unknown as {
+        ethics_config?: typeof DEFAULT_ETHICS_CONFIG;
+      }
+    ).ethics_config
   );
   if (
     process.env.NEXT_PUBLIC_STORAGE_TYPE !== 'd1' &&
