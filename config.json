@@ -91,7 +91,7 @@
       "type": "tv",
       "query": "短剧",
       "mode": "cms",
-      "sources": ["mdzy", "jisu"]
+      "sources": ["mdzy", "jisu", "dbzy"]
     }
   ],
   "ethics_config": {
