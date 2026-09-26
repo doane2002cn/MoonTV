@@ -232,7 +232,10 @@ export async function getDetailFromApi(
   if (videoDetail.vod_play_url) {
     const playSources = videoDetail.vod_play_url.split('$$$');
     if (playSources.length > 0) {
-      const mainSource = playSources[0];
+      // 优先取带 m3u8 的播放组，部分站点（如极速资源）首组是网页播放地址
+      const mainSource =
+        playSources.find((source: string) => source.includes('.m3u8')) ??
+        playSources[0];
       const episodeList = mainSource.split('#');
       episodes = episodeList
         .map((ep: string) => {
