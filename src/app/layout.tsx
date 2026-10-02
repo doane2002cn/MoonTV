@@ -2,7 +2,6 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { cookies } from 'next/headers';
 
 import './globals.css';
 import 'sweetalert2/dist/sweetalert2.min.css';
@@ -12,7 +11,6 @@ import {
   DEFAULT_ETHICS_CONFIG,
   normalizeEthicsConfig,
 } from '@/lib/ethics.config';
-import { isNsfwUnlocked, NSFW_COOKIE_NAME } from '@/lib/nsfw.server';
 import RuntimeConfig from '@/lib/runtime';
 
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
@@ -109,13 +107,6 @@ export default async function RootLayout({
     shortDramaSources = cmsCategory.sources.join(',');
   }
 
-  // NSFW 解锁状态按账号保存在 Cookie 里，服务端判定后下发给前端
-  const cookieStore = cookies();
-  const nsfwUnlocked = await isNsfwUnlocked({
-    auth: cookieStore.get('auth')?.value,
-    nsfw: cookieStore.get(NSFW_COOKIE_NAME)?.value,
-  });
-
   // 将运行时配置注入到全局 window 对象，供客户端在运行时读取
   const runtimeConfig = {
     STORAGE_TYPE: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
@@ -127,7 +118,6 @@ export default async function RootLayout({
     SHORT_DRAMA_SOURCES: shortDramaSources,
     ETHICS_SOURCES: ethicsConfig.sources.join(','),
     ETHICS_CONFIG: ethicsConfig,
-    NSFW_UNLOCKED: nsfwUnlocked,
   };
 
   return (

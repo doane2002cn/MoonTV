@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useContext, useEffect } from 'react';
+
+import { loadNsfwState } from '@/lib/nsfw.client';
 
 const SiteContext = createContext<{ siteName: string; announcement?: string }>({
   // 默认值
@@ -20,6 +22,11 @@ export function SiteProvider({
   siteName: string;
   announcement?: string;
 }) {
+  // 启动时向服务端确认当前账号的伦理内容解锁状态
+  useEffect(() => {
+    void loadNsfwState();
+  }, []);
+
   return (
     <SiteContext.Provider value={{ siteName, announcement }}>
       {children}

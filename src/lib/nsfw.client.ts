@@ -1,18 +1,10 @@
 export const NSFW_CHANGED_EVENT = 'nsfwSettingChanged';
 
 // 解锁状态以服务端按账号签发的 Cookie 为准，这里只缓存本次会话的判定结果
-let cachedEnabled: boolean | null = null;
+let cachedEnabled = false;
+let stateRequest: Promise<boolean> | null = null;
 
 export function getNsfwEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (cachedEnabled === null) {
-    const runtime = (
-      window as unknown as {
-        RUNTIME_CONFIG?: { NSFW_UNLOCKED?: boolean };
-      }
-    ).RUNTIME_CONFIG;
-    cachedEnabled = runtime?.NSFW_UNLOCKED === true;
-  }
   return cachedEnabled;
 }
 
@@ -22,6 +14,30 @@ export function setNsfwEnabled(enabled: boolean): void {
   window.dispatchEvent(
     new CustomEvent(NSFW_CHANGED_EVENT, { detail: enabled })
   );
+}
+
+// 页面加载后向服务端确认当前账号是否已解锁
+export async function loadNsfwState(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (stateRequest) return stateRequest;
+
+  stateRequest = (async () => {
+    try {
+      const res = await fetch('/api/nsfw/state', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        const unlocked = data?.unlocked === true;
+        setNsfwEnabled(unlocked);
+        return unlocked;
+      }
+    } catch {
+      // 网络异常时按未解锁处理
+    }
+    setNsfwEnabled(false);
+    return false;
+  })();
+
+  return stateRequest;
 }
 
 export async function verifyAndEnableNsfw(
