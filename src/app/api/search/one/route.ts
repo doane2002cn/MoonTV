@@ -1,12 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
+import { isNsfwCategory } from '@/lib/nsfw';
+import { isNsfwUnlockedFromRequest } from '@/lib/nsfw.server';
 
 export const runtime = 'edge';
 
 // OrionTV 兼容接口
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
   const resourceId = searchParams.get('resourceId');
@@ -42,7 +44,12 @@ export async function GET(request: Request) {
     }
 
     const results = await searchFromApi(targetSite, query);
-    const result = results.filter((r) => r.title === query);
+    const unlocked = await isNsfwUnlockedFromRequest(request);
+    // 未解锁的账号看不到伦理内容，避免其它客户端绕过网页开关
+    const visibleResults = unlocked
+      ? results
+      : results.filter((r) => !isNsfwCategory(r.type_name || ''));
+    const result = visibleResults.filter((r) => r.title === query);
     const cacheTime = await getCacheTime();
 
     if (result.length === 0) {
@@ -57,11 +64,9 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { results: result },
         {
-          headers: {
-            'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
-            'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-            'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-          },
+          headers: unlocked
+            ? { 'Cache-Control': 'private, no-store' }
+            : { 'Cache-Control': `private, max-age=${cacheTime}` },
         }
       );
     }

@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getAvailableApiSites, getCacheTime } from '@/lib/config';
 import { getDetailFromApi } from '@/lib/downstream';
+import { isNsfwCategory } from '@/lib/nsfw';
+import { isNsfwUnlockedFromRequest } from '@/lib/nsfw.server';
 
 export const runtime = 'edge';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const sourceCode = searchParams.get('source');
@@ -28,6 +30,19 @@ export async function GET(request: Request) {
 
     const result = await getDetailFromApi(apiSite, id);
     const cacheTime = await getCacheTime();
+
+    if (isNsfwCategory(result.type_name || '')) {
+      const unlocked = await isNsfwUnlockedFromRequest(request);
+      if (!unlocked) {
+        return NextResponse.json(
+          { error: '未解锁伦理内容' },
+          { status: 403, headers: { 'Cache-Control': 'private, no-store' } }
+        );
+      }
+      return NextResponse.json(result, {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
 
     return NextResponse.json(result, {
       headers: {

@@ -1,20 +1,24 @@
-export const NSFW_ENABLED_KEY = 'enableNsfw';
 export const NSFW_CHANGED_EVENT = 'nsfwSettingChanged';
+
+// 解锁状态以服务端按账号签发的 Cookie 为准，这里只缓存本次会话的判定结果
+let cachedEnabled: boolean | null = null;
 
 export function getNsfwEnabled(): boolean {
   if (typeof window === 'undefined') return false;
-  const saved = localStorage.getItem(NSFW_ENABLED_KEY);
-  if (saved === null) return false;
-  try {
-    return JSON.parse(saved) as boolean;
-  } catch {
-    return saved === 'true';
+  if (cachedEnabled === null) {
+    const runtime = (
+      window as unknown as {
+        RUNTIME_CONFIG?: { NSFW_UNLOCKED?: boolean };
+      }
+    ).RUNTIME_CONFIG;
+    cachedEnabled = runtime?.NSFW_UNLOCKED === true;
   }
+  return cachedEnabled;
 }
 
 export function setNsfwEnabled(enabled: boolean): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(NSFW_ENABLED_KEY, JSON.stringify(enabled));
+  cachedEnabled = enabled;
   window.dispatchEvent(
     new CustomEvent(NSFW_CHANGED_EVENT, { detail: enabled })
   );
@@ -38,6 +42,16 @@ export async function verifyAndEnableNsfw(
   } catch {
     return { ok: false, error: '网络错误，请稍后重试' };
   }
+}
+
+// 关闭开关需要清掉服务端 Cookie，否则刷新后会再次变成已解锁
+export async function disableNsfw(): Promise<void> {
+  try {
+    await fetch('/api/nsfw/verify', { method: 'DELETE' });
+  } catch {
+    // 请求失败也要先隐藏本会话的内容
+  }
+  setNsfwEnabled(false);
 }
 
 export function subscribeNsfwChange(

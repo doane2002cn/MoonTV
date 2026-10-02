@@ -12,7 +12,10 @@ import {
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { createEthicsCategoryMatcher, normalizeEthicsConfig } from '@/lib/ethics.config';
+import {
+  createEthicsCategoryMatcher,
+  normalizeEthicsConfig,
+} from '@/lib/ethics.config';
 import { partitionSearchResults } from '@/lib/nsfw';
 import { getNsfwEnabled, subscribeNsfwChange } from '@/lib/nsfw.client';
 import { SearchResult } from '@/lib/types';
@@ -171,8 +174,10 @@ function SearchPageClient() {
   const fetchSearchResults = async (query: string) => {
     try {
       setIsLoading(true);
+      // 解锁状态下换一个 URL，避免复用未解锁时缓存的旧结果
+      const nsfwParam = getNsfwEnabled() ? '&nsfw=1' : '';
       const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query.trim())}`
+        `/api/search?q=${encodeURIComponent(query.trim())}${nsfwParam}`
       );
       const data = await response.json();
       const results = data.results as SearchResult[];
@@ -184,30 +189,30 @@ function SearchPageClient() {
         createEthicsCategoryMatcher(ethicsConfig)
       );
       const sortFn = (a: SearchResult, b: SearchResult) => {
-          // 优先排序：标题与搜索词完全一致的排在前面
-          const aExactMatch = a.title === query.trim();
-          const bExactMatch = b.title === query.trim();
+        // 优先排序：标题与搜索词完全一致的排在前面
+        const aExactMatch = a.title === query.trim();
+        const bExactMatch = b.title === query.trim();
 
-          if (aExactMatch && !bExactMatch) return -1;
-          if (!aExactMatch && bExactMatch) return 1;
+        if (aExactMatch && !bExactMatch) return -1;
+        if (!aExactMatch && bExactMatch) return 1;
 
-          // 如果都匹配或都不匹配，则按原来的逻辑排序
-          if (a.year === b.year) {
-            return a.title.localeCompare(b.title);
+        // 如果都匹配或都不匹配，则按原来的逻辑排序
+        if (a.year === b.year) {
+          return a.title.localeCompare(b.title);
+        } else {
+          // 处理 unknown 的情况
+          if (a.year === 'unknown' && b.year === 'unknown') {
+            return 0;
+          } else if (a.year === 'unknown') {
+            return 1; // a 排在后面
+          } else if (b.year === 'unknown') {
+            return -1; // b 排在后面
           } else {
-            // 处理 unknown 的情况
-            if (a.year === 'unknown' && b.year === 'unknown') {
-              return 0;
-            } else if (a.year === 'unknown') {
-              return 1; // a 排在后面
-            } else if (b.year === 'unknown') {
-              return -1; // b 排在后面
-            } else {
-              // 都是数字年份，按数字大小排序（大的在前面）
-              return parseInt(a.year) > parseInt(b.year) ? -1 : 1;
-            }
+            // 都是数字年份，按数字大小排序（大的在前面）
+            return parseInt(a.year) > parseInt(b.year) ? -1 : 1;
           }
-        };
+        }
+      };
       setSearchResults(safe.sort(sortFn));
       setEthicsResults(ethics.sort(sortFn));
       setShowResults(true);
@@ -347,11 +352,12 @@ function SearchPageClient() {
                         />
                       </div>
                     ))}
-                {searchResults.length === 0 && (!nsfwEnabled || ethicsResults.length === 0) && (
-                  <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
-                    未找到相关结果
-                  </div>
-                )}
+                {searchResults.length === 0 &&
+                  (!nsfwEnabled || ethicsResults.length === 0) && (
+                    <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
+                      未找到相关结果
+                    </div>
+                  )}
               </div>
 
               {nsfwEnabled && ethicsResults.length > 0 && (
