@@ -122,6 +122,7 @@ function shouldSkipAuth(pathname: string): boolean {
     '/favicon.ico',
     '/robots.txt',
     '/manifest.json',
+    '/docs/',
     '/icons/',
     '/logo.png',
     '/screenshot.png',
@@ -133,6 +134,6 @@ function shouldSkipAuth(pathname: string): boolean {
 // 配置middleware匹配规则
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/register|api/logout|api/cron|api/server-config).*)',
+    '/((?!_next/static|_next/image|favicon.ico|docs/|login|warning|api/login|api/register|api/logout|api/cron|api/server-config).*)',
   ],
 };

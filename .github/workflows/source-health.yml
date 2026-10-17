@@ -1,0 +1,42 @@
+name: Source Health
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: source-health
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Probe sources
+        run: node scripts/probe-source-health.mjs
+
+      - name: Publish result
+        run: |
+          if git diff --quiet -- public/docs/sources_health.json; then
+            echo "No change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/docs/sources_health.json
+          git commit -m "chore(source-health): refresh health list"
+          git push
