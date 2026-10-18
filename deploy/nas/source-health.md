@@ -4,7 +4,7 @@ NAS 负责探测，Cloudflare 负责发布：
 
 - NAS 每 12 小时运行一次探测，把 `public/docs/sources_health.json` 提交到 GitHub `main`
 - 线上 `https://moontv.12879737.xyz/api/sources/health` 读取仓库里的最新清单
-- GitHub Actions 仅作兜底：清单超过 12 小时未更新时才探测
+- GitHub Actions 仅作兜底：清单超过 14 小时未更新时才探测
 
 不需要 git，也不需要 clone 仓库：发布走 GitHub Contents API。
 

@@ -16,14 +16,20 @@ GET https://moontv.12879737.xyz/api/sources/health
 
 - 无需鉴权
 - 响应头 `Cache-Control: public, max-age=300`，请勿缓存超过 5 分钟
-- 建议拉取频率：每 3–12 小时；不需要更频繁
-- 静态快照（备用，随部署更新）：`https://moontv.12879737.xyz/docs/sources_health.json`
+- 建议拉取频率：每 6–12 小时；接口本身缓存 5 分钟，不需要更频繁
+- 静态快照（备用）：`https://moontv.12879737.xyz/docs/sources_health.json`
+  - 快照只在站点重新部署时更新，**可能落后于 API**，使用前请同样检查 `generated_at`
+
+| 项 | 值 |
+|---|---|
+| 探测周期 | 12 小时 |
+| 判定清单失效 | `generated_at` 距今超过 **14 小时**（12h + 2h 缓冲） |
 
 ## 字段
 
 | 字段 | 说明 |
 |---|---|
-| `generated_at` | 本次探测完成时间，含时区（如 `2026-10-18T09:20:00+08:00`） |
+| `generated_at` | 本轮**全部源探测完成**的时间，含时区（如 `2026-10-18T09:20:00+08:00`） |
 | `summary` | `{ total, ok, failed }` |
 | `sources[].key` | 源站唯一标识，与 MoonTV 配置里的 key 一致 |
 | `sources[].name` | 源站名称 |
@@ -54,7 +60,8 @@ Network: ...
 
 ## 建议的使用规则
 
-1. **先校验新鲜度**：`generated_at` 距现在超过 3 小时 → 视为探测任务失效，回落本地探测。
+1. **先校验新鲜度**：`generated_at` 距现在超过 **14 小时** → 视为探测任务失效，回落本地探测。
+   探测周期是 12 小时，正常情况下清单年龄在 0–12 小时之间波动，因此不能用 3 小时这类更短的阈值。
 2. 按 `key` 建立索引，不要依赖 `sources` 数组顺序。
 3. `consecutive_fails >= 3` → 暂不抓取该源。
 4. `ok=true` 或 `consecutive_fails < 3` → 正常使用；`ok` 由 `false` 转为 `true` 即自动恢复。
@@ -69,7 +76,7 @@ import httpx
 
 HEALTH_URL = "https://moontv.12879737.xyz/api/sources/health"
 FAIL_THRESHOLD = 3
-MAX_AGE = datetime.timedelta(hours=3)
+MAX_AGE = datetime.timedelta(hours=14)
 
 
 def load_health() -> dict[str, dict]:
