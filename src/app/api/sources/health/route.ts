@@ -19,12 +19,14 @@ export async function GET() {
   let origin = 'snapshot';
 
   try {
-    const response = await fetch(RAW_URL, {
+    // 不使用边缘缓存：机器人提交后要尽快可见；对外响应仍由 Cache-Control 控制
+    const response = await fetch(`${RAW_URL}?t=${Date.now()}`, {
       headers: {
         Accept: 'application/json',
         'User-Agent': 'moontv-source-health',
       },
-      cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true },
+      cache: 'no-store',
+      cf: { cacheTtl: 0, cacheEverything: false },
     } as FetchInitWithCache);
 
     if (response.ok) {
