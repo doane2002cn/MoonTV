@@ -41,6 +41,7 @@ export async function GET() {
     headers: {
       'Cache-Control': `public, max-age=${CACHE_SECONDS}`,
       'X-Health-Source': origin,
+      'X-Health-Route': 'git-raw-v2',
     },
   });
 }
