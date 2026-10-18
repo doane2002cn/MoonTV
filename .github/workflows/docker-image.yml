@@ -6,13 +6,13 @@ on:
       - main
     paths-ignore:
       - '**.md'
-      - 'public/docs/sources_health.json'
+      - 'public/docs/**'
   pull_request:
     branches:
       - main
     paths-ignore:
       - '**.md'
-      - 'public/docs/sources_health.json'
+      - 'public/docs/**'
   workflow_dispatch:
 
 concurrency:
