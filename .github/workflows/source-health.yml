@@ -1,4 +1,5 @@
 name: Source Health
+# NAS 是主探测点；这里只在清单超过 12 小时未更新时兜底
 
 on:
   schedule:
