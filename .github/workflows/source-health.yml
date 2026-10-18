@@ -2,12 +2,14 @@ name: Source Health
 
 on:
   schedule:
-    - cron: '0 */12 * * *'
+    # 每 3 小时检查一次；清单超过 12 小时没更新才探测（NAS 为主，这里只兜底）
+    - cron: '0 */3 * * *'
   workflow_dispatch:
   push:
     paths:
       - '.github/workflows/source-health.yml'
       - 'scripts/probe-source-health.mjs'
+      - 'scripts/publish-source-health.mjs'
 
 permissions:
   contents: write
@@ -30,10 +32,37 @@ jobs:
         with:
           node-version: 20
 
+      - name: Check freshness
+        id: freshness
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "probe=true" >> "$GITHUB_OUTPUT"
+            echo "manual or explicit run: probe now"
+            exit 0
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          let ageHours = Infinity;
+          try {
+            const data = JSON.parse(
+              fs.readFileSync('public/docs/sources_health.json', 'utf8')
+            );
+            const generated = Date.parse(data.generated_at);
+            if (!Number.isNaN(generated)) {
+              ageHours = (Date.now() - generated) / 3600000;
+            }
+          } catch {}
+          const probe = ageHours >= 12;
+          console.log(`list age=${ageHours.toFixed(1)}h probe=${probe}`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `probe=${probe}\n`);
+          NODE
+
       - name: Probe sources
+        if: steps.freshness.outputs.probe == 'true'
         run: node scripts/probe-source-health.mjs
 
       - name: Publish result
+        if: steps.freshness.outputs.probe == 'true'
         run: |
           if git diff --quiet -- public/docs/sources_health.json; then
             echo "No change"

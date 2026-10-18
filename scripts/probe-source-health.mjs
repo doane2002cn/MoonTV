@@ -178,18 +178,14 @@ async function mapPool(items, limit, worker) {
 }
 
 /**
- * 执行一轮探测并写文件。
- * 可用 options 覆盖路径/超时/并发，方便本地测试与 NAS 复用。
+ * 对一份配置执行一轮探测，返回待发布的清单（不落盘）。
+ * previous 是 Map<key, 上一次的条目>，用于延续连续失败计数与 last_ok。
  */
-export async function runProbe(options = {}) {
-  const root = options.root || process.cwd();
-  const configPath = options.configPath || path.join(root, 'config.json');
-  const outPath =
-    options.outPath || path.join(root, 'public', 'docs', 'sources_health.json');
+export async function probeConfig(config, options = {}) {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
+  const previous = options.previous || new Map();
 
-  const config = JSON.parse(await readFile(configPath, 'utf8'));
   const sites = Object.entries(config.api_site ?? {})
     .filter(([, site]) => site && typeof site.api === 'string' && site.api)
     .map(([key, site]) => ({
@@ -198,7 +194,6 @@ export async function runProbe(options = {}) {
       api: site.api,
     }));
 
-  const previous = await readPrevious(outPath);
   const records = await mapPool(sites, concurrency, async (site) => {
     const probe = await probeOne(site, { timeoutMs });
     return buildRecord(site, probe, previous.get(site.key));
@@ -214,6 +209,27 @@ export async function runProbe(options = {}) {
     },
     sources: records,
   };
+
+  return payload;
+}
+
+/**
+ * 执行一轮探测并写文件。
+ * 可用 options 覆盖路径/超时/并发，方便本地测试与 NAS 复用。
+ */
+export async function runProbe(options = {}) {
+  const root = options.root || process.cwd();
+  const configPath = options.configPath || path.join(root, 'config.json');
+  const outPath =
+    options.outPath || path.join(root, 'public', 'docs', 'sources_health.json');
+
+  const config = JSON.parse(await readFile(configPath, 'utf8'));
+  const previous = await readPrevious(outPath);
+  const payload = await probeConfig(config, {
+    timeoutMs: options.timeoutMs,
+    concurrency: options.concurrency,
+    previous,
+  });
 
   await mkdir(path.dirname(outPath), { recursive: true });
   await writeFile(outPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
